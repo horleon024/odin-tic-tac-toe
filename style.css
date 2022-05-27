@@ -27,3 +27,7 @@ h1 {
 	font-size: 50px;
 	font-weight: 800;
 }
+
+.game-state {
+	text-align: center;
+}
