@@ -24,38 +24,47 @@ const gameBoard = (() => {
 		setField,
 		getField
 	};
-  })();
+})();
 
-  const displayController = (() => {
+const displayController = (() => {
 	const _restartButton = document.querySelector(".restart-button");
 	const _gameState = document.querySelector(".game-state");
 	const _gameFields = document.querySelectorAll(".game-field");
 
-	const _updateGameField = (event) => {
+	let _gameIsOver = false;
 
+	const _updateGameField = (event) => {
+		if (event.target.textContent !== "" || _gameIsOver) return;
+
+		const currentIndex = parseInt(event.target.dataset.index) - 1;
+		_gameFields[currentIndex].textContent = gameController.getCurrentPlayerSign();
+		if (gameController.playRound(currentIndex)) _gameIsOver = true;
 	};
 
 	_gameFields.forEach((gameField) => gameField.addEventListener("click", _updateGameField));
 
 	const _restartGame = () => {
 		gameBoard.clearBoard();
-
+		for (let i = 0; i < 9; i++) _gameFields[i].textContent = "";
+		gameController.resetGame();
+		setGameState("Player X's turn", true);
 	};
 
 	_restartButton.addEventListener("click", _restartGame);
 
-	const setGameState = (state) => {
+	const setGameState = (state, isRestart = false) => {
 		_gameState.textContent = state;
+		if (isRestart) _gameIsOver = false;
 	};
 	return { setGameState };
-  })();
+})();
 
-  const gameController = (() => {
+const gameController = (() => {
 	const _playerX = playerFactory("X");
 	const _playerO = playerFactory("O");
 	let _currentRound = 1;
 
-	const _getCurrentPlayerSign = () => {
+	const getCurrentPlayerSign = () => {
 		return _currentRound % 2 == 1 ? _playerX.getSign() : _playerO.getSign();
 	};
 
@@ -98,8 +107,27 @@ const gameBoard = (() => {
 	const _checkForWin = () => {
 		if (_currentRound < 5) return false;
 		if (_checkForColumnWin() || _checkForRowWin() || _checkForDiagonalWin()) return true;
-		if (_currentRound === 9) return "Draw";
 		return false;
 	};
 
-  })();
+	const playRound = (fieldIndex) => {
+		gameBoard.setField(fieldIndex, getCurrentPlayerSign());
+		if (_checkForWin()) {
+			displayController.setGameState(`Player ${getCurrentPlayerSign()} has won`);
+			return true;
+		}
+		if (_currentRound === 9) {
+			displayController.setGameState("Draw");
+			return true;
+		}
+		_currentRound++;
+		displayController.setGameState(`Player ${getCurrentPlayerSign()}'s turn`);
+		return false;
+	};
+
+	const resetGame = () => {
+		_currentRound = 1;
+	};
+
+	return { playRound, resetGame, getCurrentPlayerSign };
+})();
